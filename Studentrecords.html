@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cango Kidz Playschool</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Cango Kidz Playschool and Daycare</h2>
+
+        <h3>Student Registration</h3>
+        <form id="studentForm">
+            <input type="text" id="name" placeholder="Student Name" required>
+            <select id="class">
+                <option>Play Group</option>
+                <option>Pre-Nursery</option>
+                <option>Nursery</option>
+                <option>Prep</option>
+                <option>Daycare</option>
+            </select>
+            <input type="date" id="dob" required>
+            <input type="text" id="father" placeholder="Father's Name" required>
+            <input type="text" id="mother" placeholder="Mother's Name" required>
+            <input type="date" id="admission" required>
+            <button type="button" onclick="saveStudent()">Save Student</button>
+        </form>
+
+        <h3>Student List</h3>
+        <table id="studentTable">
+            <tr>
+                <th>Name</th>
+                <th>Class</th>
+                <th>Age</th>
+                <th>Actions</th>
+            </tr>
+        </table>
+    </div>
+
+    <script>
+        function saveStudent() {
+            let student = {
+                name: document.getElementById("name").value,
+                class: document.getElementById("class").value,
+                dob: document.getElementById("dob").value,
+                father: document.getElementById("father").value,
+                mother: document.getElementById("mother").value,
+                admission: document.getElementById("admission").value
+            };
+
+            fetch('http://localhost:3000/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(student)
+            }).then(response => response.text()).then(data => {
+                alert(data);
+                loadStudents();
+            });
+        }
+
+        function loadStudents() {
+            fetch('http://localhost:3000/getStudents')
+                .then(response => response.json())
+                .then(students => {
+                    let table = document.getElementById("studentTable");
+                    table.innerHTML = `
+                        <tr>
+                            <th>Name</th>
+                            <th>Class</th>
+                            <th>Age</th>
+                            <th>Actions</th>
+                        </tr>`;
+
+                    students.forEach((student, index) => {
+                        let age = new Date().getFullYear() - new Date(student.dob).getFullYear();
+                        let row = table.insertRow(-1);
+                        row.insertCell(0).innerText = student.name;
+                        row.insertCell(1).innerText = student.class;
+                        row.insertCell(2).innerText = age;
+                        row.insertCell(3).innerHTML = `<button onclick="collectFee(${index})">Add Fee</button>`;
+                    });
+                });
+        }
+
+        function collectFee(index) {
+            let month = prompt("Enter month:");
+            let amount = prompt("Enter fee amount:");
+
+            if (month && amount) {
+                fetch(`http://localhost:3000/addFee/${index}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ month, amount })
+                }).then(response => response.text()).then(data => {
+                    alert(data);
+                    loadStudents();
+                });
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", loadStudents);
+    </script>
+</body>
+</html>
